@@ -1,4 +1,4 @@
-package com.example.springsecuritytest.dto;
+package com.example.springsecuritytest.dto.request;
 
 public class RegisterRequest {
     private String username;
