@@ -1,5 +1,6 @@
 package com.example.springsecuritytest.controller;
 
+import com.example.springsecuritytest.dto.request.RegisterRequest;
 import com.example.springsecuritytest.model.User;
 import com.example.springsecuritytest.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<List<User>> findAllUser() {
-        return ResponseEntity.ok(userService.findAll());
+        return ResponseEntity.ok((List<User>) userService.findAll());
     }
 
     @GetMapping("/{id}")
@@ -33,31 +34,13 @@ public class UserController {
     }
 
     @PostMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User request) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody RegisterRequest request) {
         User user = userService.findById(id);
         if (user == null) {
             return ResponseEntity.notFound().build();
         }
 
-        //unique control
-        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
-            if (userService.existsByUsername(request.getUsername())) {
-                return ResponseEntity.badRequest().body("Username already taken");
-            }
-            user.setUsername(request.getUsername());
-        }
-        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userService.existByEmail(request.getEmail())) {
-                return ResponseEntity.badRequest().body("Email already taken");
-            }
-            user.setEmail(request.getEmail());
-        }
-
-        //password check
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
-
+        userService.updateUser(user, request);
         return ResponseEntity.ok(userService.save(user));
     }
 

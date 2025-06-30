@@ -8,7 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class User implements UserDetails {
@@ -19,9 +20,15 @@ public class User implements UserDetails {
     private String username;
     @JsonIgnore
     private String password;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles;
     private String email;
-    @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
     private Date createdAt;
     private Date updatedAt;
 
@@ -39,6 +46,14 @@ public class User implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 
     public String getEmail() {
@@ -78,8 +93,18 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        //roles
+        for (Role role : getRoles()) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+            //permissions
+            for (Permission perm : role.getPermissions()) {
+                authorities.add(new SimpleGrantedAuthority(perm.getName()));
+            }
+        }
+        return authorities;
     }
+
 
     @Override
     public String getPassword() {
